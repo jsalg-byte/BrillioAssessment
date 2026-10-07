@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+const API_BASE_URL = 'http://localhost:8000'
 
 function App() {
   // Form input state: tracks typing without triggering API calls on each keystroke
@@ -12,6 +14,70 @@ function App() {
     pageSize: '5',
   })
 
+  // API state: tracks response data, loading, error, and pagination separately
+  const [apiState, setApiState] = useState({
+    listings: [],
+    totalCount: 0,
+    totalPages: 1,
+    page: 1,
+    pageSize: 5,
+    loading: false,
+    error: null,
+  })
+
+  // Dynamic Query Building with URLSearchParams
+  const fetchListings = async (targetPage = 1) => {
+    setApiState((prev) => ({ ...prev, loading: true, error: null }))
+
+    try {
+      const params = new URLSearchParams()
+
+      // Dynamically attach only non-empty form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          if (key === 'pageSize') {
+            params.set('pageSize', value)
+          } else {
+            params.set(key, value)
+          }
+        }
+      })
+
+      // Explicitly set target page
+      params.set('page', targetPage)
+
+      const response = await fetch(`${API_BASE_URL}/api/search?${params.toString()}`)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.detail || `Request failed with status ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      setApiState({
+        listings: data.results || [],
+        totalCount: data.totalCount || 0,
+        totalPages: data.totalPages || 1,
+        page: data.page || 1,
+        pageSize: data.pageSize || 5,
+        loading: false,
+        error: null,
+      })
+    } catch (err) {
+      setApiState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.message || 'An unexpected error occurred',
+      }))
+    }
+  }
+
+  // Initial Mount: load initial listings immediately
+  useEffect(() => {
+    fetchListings(1)
+  }, [])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -20,9 +86,10 @@ function App() {
     }))
   }
 
+  // Intercept the search: prevent page refresh and always reset back to page 1
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Search triggered with:', formData)
+    fetchListings(1)
   }
 
   return (
@@ -176,26 +243,29 @@ function App() {
             <div>
               <button
                 type="submit"
+                disabled={apiState.loading}
                 aria-label="Submit property search"
                 style={{
                   padding: '0.6rem 1.5rem',
                   minHeight: '44px',
-                  backgroundColor: '#2563eb',
+                  backgroundColor: apiState.loading ? '#94a3b8' : '#2563eb',
                   color: '#ffffff',
                   fontWeight: 600,
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer',
+                  cursor: apiState.loading ? 'not-allowed' : 'pointer',
                 }}
               >
-                Search
+                {apiState.loading ? 'Searching...' : 'Search'}
               </button>
             </div>
           </form>
         </search>
 
-        {/* Live region reserved for screen readers */}
-        <div aria-live="polite" aria-atomic="true" style={{ minHeight: '1.5rem', marginBottom: '1rem' }}></div>
+        {/* Live status announcement */}
+        <div aria-live="polite" aria-atomic="true" style={{ minHeight: '1.5rem', marginBottom: '1rem', color: '#64748b' }}>
+          {apiState.loading && 'Loading listings...'}
+        </div>
       </main>
     </div>
   )

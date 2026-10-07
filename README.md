@@ -38,3 +38,9 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 - created inputs for minPrice, maxPrice, targetBudget, minBedrooms, city, keyword, and pageSize
 - managed inputs through a separate `formData` state object so user typing doesn't trigger API requests on every keystroke.
 - added accessibility best practices. i googled to find references on these best practices but for me this is important to pair with any feature release. i like to think of accessibility (at least basic accessibility) as a requirement.
+
+## Step 8 - API Integration & CORS
+- cors addition so requests are valid
+- api integration to connect backend and frontend finally
+- search param shape construction
+- error handling
