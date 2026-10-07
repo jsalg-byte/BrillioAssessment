@@ -1,5 +1,10 @@
 # Project Setup & Log
 
+i realize i did not explicitly state how to do the initial setup for the project but the commands are below.
+
+backend : uv run uvicorn main:app --reload --port 8000
+frontend : npm run dev
+
 ## Step 0 - Project Structure
 - Set up `backend` and `frontend` folders inside `/app`.
 - Moved `sample_listings.json` into `/app/backend` so the backend service can access it directly.
@@ -44,3 +49,9 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 - api integration to connect backend and frontend finally
 - search param shape construction
 - error handling
+
+## Step 9 - Results Container & Pagination UI
+- ui additions: loading spinner/text, error alert banner, "no matches found" empty state, and listing results.
+- each listing is a card with list of fields from the data
+- pagination logic / controls added
+- browser alert dialogs on API error responses so users get immediate notification when validation fails (e.g., minPrice > maxPrice).

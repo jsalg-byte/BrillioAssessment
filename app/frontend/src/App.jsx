@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 const API_BASE_URL = 'http://localhost:8000'
 
 function App() {
-  // Form input state: tracks typing without triggering API calls on each keystroke
+  // 1. Form input state: tracks typing without triggering API requests on every keystroke
   const [formData, setFormData] = useState({
     minPrice: '',
     maxPrice: '',
@@ -14,7 +14,18 @@ function App() {
     pageSize: '5',
   })
 
-  // API state: tracks response data, loading, error, and pagination separately
+  // Active query state: holds the filters actively submitted, keeping pagination stable
+  const [activeFilters, setActiveFilters] = useState({
+    minPrice: '',
+    maxPrice: '',
+    minBedrooms: '',
+    city: '',
+    keyword: '',
+    targetBudget: '',
+    pageSize: '5',
+  })
+
+  // 2. API state: tracks response data, loading, error, and pagination separately
   const [apiState, setApiState] = useState({
     listings: [],
     totalCount: 0,
@@ -26,20 +37,16 @@ function App() {
   })
 
   // Dynamic Query Building with URLSearchParams
-  const fetchListings = async (targetPage = 1) => {
+  const fetchListings = async (filtersToUse, targetPage = 1) => {
     setApiState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
       const params = new URLSearchParams()
 
       // Dynamically attach only non-empty form fields
-      Object.entries(formData).forEach(([key, value]) => {
+      Object.entries(filtersToUse).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
-          if (key === 'pageSize') {
-            params.set('pageSize', value)
-          } else {
-            params.set(key, value)
-          }
+          params.set(key, value)
         }
       })
 
@@ -51,6 +58,7 @@ function App() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         const errorMessage = errorData.detail || `Request failed with status ${response.status}`
+        window.alert(`Search Error: ${errorMessage}`)
         throw new Error(errorMessage)
       }
 
@@ -67,6 +75,7 @@ function App() {
     } catch (err) {
       setApiState((prev) => ({
         ...prev,
+        listings: [],
         loading: false,
         error: err.message || 'An unexpected error occurred',
       }))
@@ -75,7 +84,7 @@ function App() {
 
   // Initial Mount: load initial listings immediately
   useEffect(() => {
-    fetchListings(1)
+    fetchListings(formData, 1)
   }, [])
 
   const handleChange = (e) => {
@@ -89,7 +98,12 @@ function App() {
   // Intercept the search: prevent page refresh and always reset back to page 1
   const handleSubmit = (e) => {
     e.preventDefault()
-    fetchListings(1)
+    setActiveFilters(formData)
+    fetchListings(formData, 1)
+  }
+
+  const handlePageChange = (newPage) => {
+    fetchListings(activeFilters, newPage)
   }
 
   return (
@@ -266,6 +280,210 @@ function App() {
         <div aria-live="polite" aria-atomic="true" style={{ minHeight: '1.5rem', marginBottom: '1rem', color: '#64748b' }}>
           {apiState.loading && 'Loading listings...'}
         </div>
+
+        {/* Results Container: Conditional Rendering Matrix */}
+        <section aria-label="Search Results" style={{ marginBottom: '3rem' }}>
+          {/* State 1: Error message */}
+          {apiState.error && (
+            <div
+              role="alert"
+              style={{
+                padding: '1rem 1.25rem',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #f87171',
+                borderRadius: '6px',
+                color: '#b91c1c',
+                fontWeight: 500,
+                marginBottom: '1.5rem',
+              }}
+            >
+              <strong>Error: </strong>
+              {apiState.error}
+            </div>
+          )}
+
+          {/* State 2: Loading indicator */}
+          {apiState.loading && (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '1.1rem' }}>
+              Loading listings...
+            </div>
+          )}
+
+          {/* State 3: No matches found */}
+          {!apiState.loading && !apiState.error && apiState.listings.length === 0 && (
+            <div
+              style={{
+                padding: '2.5rem',
+                textAlign: 'center',
+                backgroundColor: '#f8fafc',
+                border: '1px dashed #cbd5e1',
+                borderRadius: '8px',
+                color: '#475569',
+              }}
+            >
+              <h3 style={{ margin: '0 0 0.5rem 0' }}>No listings matched your criteria</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem' }}>Try broadening your price bounds, removing keywords, or clearing the city filter.</p>
+            </div>
+          )}
+
+          {/* State 4: Render listing cards / boxes */}
+          {!apiState.loading && !apiState.error && apiState.listings.length > 0 && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                  color: '#475569',
+                  fontSize: '0.95rem',
+                }}
+              >
+                <span>
+                  Showing <strong>{apiState.listings.length}</strong> of <strong>{apiState.totalCount}</strong> listings (Page {apiState.page} of {apiState.totalPages})
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {apiState.listings.map((listing) => (
+                  <article
+                    key={`${listing.source}-${listing.id}`}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '1.25rem 1.5rem',
+                      backgroundColor: '#ffffff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <h2 style={{ fontSize: '1.25rem', margin: 0, color: '#1e293b' }}>
+                        {listing.address}
+                      </h2>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '9999px',
+                            backgroundColor: '#e0e7ff',
+                            color: '#3730a3',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          Relevance: {listing.relevance ?? 'N/A'}
+                        </span>
+                        <span
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            backgroundColor: '#f1f5f9',
+                            color: '#475569',
+                            fontSize: '0.8rem',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {listing.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ margin: '0 0 0.75rem 0', color: '#64748b', fontSize: '0.95rem' }}>
+                      {listing.city}, {listing.state} {listing.zip} &bull; <em style={{ fontStyle: 'normal' }}>Source: {listing.source}</em>
+                    </p>
+
+                    <ul
+                      style={{
+                        listStyle: 'none',
+                        padding: 0,
+                        margin: '0 0 0.75rem 0',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1.5rem',
+                        fontSize: '0.95rem',
+                        color: '#334155',
+                      }}
+                    >
+                      <li>
+                        <strong>Price:</strong> ${listing.price ? Number(listing.price).toLocaleString() : 'N/A'}
+                      </li>
+                      <li>
+                        <strong>Bedrooms:</strong> {listing.bedrooms}
+                      </li>
+                      <li>
+                        <strong>Bathrooms:</strong> {listing.bathrooms}
+                      </li>
+                      <li>
+                        <strong>Sqft:</strong> {listing.sqft ? Number(listing.sqft).toLocaleString() : 'N/A'}
+                      </li>
+                      <li>
+                        <strong>Listed:</strong> {listing.listedDate}
+                      </li>
+                    </ul>
+
+                    {listing.description && (
+                      <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                        {listing.description}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+
+              {/* Hard-stopping Pagination Bar */}
+              <nav
+                aria-label="Search results pagination"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginTop: '2rem',
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={apiState.page <= 1 || apiState.loading}
+                  onClick={() => handlePageChange(apiState.page - 1)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    minHeight: '44px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: apiState.page <= 1 ? '#f1f5f9' : '#ffffff',
+                    cursor: apiState.page <= 1 ? 'not-allowed' : 'pointer',
+                    color: apiState.page <= 1 ? '#94a3b8' : '#1e293b',
+                    fontWeight: 500,
+                  }}
+                >
+                  &larr; Previous
+                </button>
+
+                <span style={{ fontSize: '0.95rem', color: '#475569' }}>
+                  Page {apiState.page} of {apiState.totalPages}
+                </span>
+
+                <button
+                  type="button"
+                  disabled={apiState.page >= apiState.totalPages || apiState.loading}
+                  onClick={() => handlePageChange(apiState.page + 1)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    minHeight: '44px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: apiState.page >= apiState.totalPages ? '#f1f5f9' : '#ffffff',
+                    cursor: apiState.page >= apiState.totalPages ? 'not-allowed' : 'pointer',
+                    color: apiState.page >= apiState.totalPages ? '#94a3b8' : '#1e293b',
+                    fontWeight: 500,
+                  }}
+                >
+                  Next &rarr;
+                </button>
+              </nav>
+            </>
+          )}
+        </section>
       </main>
     </div>
   )
