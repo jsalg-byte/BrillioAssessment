@@ -17,6 +17,57 @@ def read_root():
     return {"message": "Hello World"}
 
 
+def parse_listing_date(date_str: Optional[str]) -> Optional[datetime]:
+    if not date_str or not isinstance(date_str, str):
+        return None
+
+    cleaned = date_str.strip()
+    # 1. Try ISO 8601 (handles YYYY-MM-DD as well as timestamps like YYYY-MM-DDTHH:MM:SS)
+    try:
+        return datetime.fromisoformat(cleaned.replace("Z", "+00:00"))
+    except ValueError:
+        pass
+
+    # 2. Try common MLS feed date formats
+    for fmt in ("%m/%d/%Y", "%Y/%m/%d", "%d-%m-%Y", "%b %d, %Y"):
+        try:
+            return datetime.strptime(cleaned, fmt)
+        except ValueError:
+            continue
+
+    # Not a valid date string
+    return None
+
+# helper function we will bring in later
+def calculate_relevance(listing_price: float, listed_date: Optional[str], target_budget: Optional[float] = None) -> float:
+    score = 0.0
+
+    # 1. Target Budget Value (70% weight)
+    if target_budget is not None and target_budget > 0:
+        price_diff = abs(listing_price - target_budget)
+        budget_score = max(0.0, 1.0 - (price_diff / target_budget))
+        score += budget_score * 0.7
+
+    # 2. Recency (30% weight)
+    # Parse multiple known formats; give 0.0 recency if it cannot be parsed as a date
+    date_obj = parse_listing_date(listed_date)
+    if date_obj is not None:
+        # Strip timezone if present to compare with naive local now
+        if date_obj.tzinfo is not None:
+            date_obj = date_obj.replace(tzinfo=None)
+        days_old = (datetime.now() - date_obj).days
+        if days_old < 0:
+            days_old = 0
+        recency_score = max(0.0, 1.0 - (days_old / 60.0))
+        score += recency_score * 0.3
+    else:
+        # Explicit 0 points for recency if date is missing or unparseable
+        score += 0.0
+    # round to 3 decimal places because we dont want anythign silly
+    return round(score, 3)
+
+
+
 @app.get("/api/search")
 def search_listings(
     minPrice: Optional[float] = None,
