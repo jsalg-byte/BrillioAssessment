@@ -23,3 +23,6 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 ## Step 4 - Relevance Scoring Helper
 - the relevenacy score took a while for me to think of...in the end i decided a buyer doesnt care too much about how recently the listing was posted, they care more about the price. given that the target budget value logic is already in place we use that as a 70% weight for this portion of the total score. the remainign 30% was given to the listing date with a 60 day window. falling out that window gives it a 0 score, but with 70% from the budget value i think thats fine. these are some business logic rules that are best done in collaboration or with some AB testing in my experience. listed date also recieves some error handling and if there is an error after attempts to fix it ourself we just give a 0 score to the recency. MLS are notoriously messy with their data and its almost always mismatched from the work i have done.
 - tldr : `70% target budget proximity / 30% recency`
+
+## Step 5 - Hooking Scoring into Search Results
+- helper function integrated

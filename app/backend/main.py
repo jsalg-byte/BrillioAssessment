@@ -38,7 +38,7 @@ def parse_listing_date(date_str: Optional[str]) -> Optional[datetime]:
     # Not a valid date string
     return None
 
-# helper function we will bring in later
+# helper function
 def calculate_relevance(listing_price: float, listed_date: Optional[str], target_budget: Optional[float] = None) -> float:
     score = 0.0
 
@@ -101,7 +101,7 @@ def search_listings(
     city_normalized = city.strip().lower() if city and city.strip() else None
     keyword_normalized = keyword.strip().lower() if keyword and keyword.strip() else None
 
-    # Filter through in-memory dataset
+    # Filter and score surviving listings
     for listing in LISTINGS:
         if minPrice is not None and listing.get("price", 0) < minPrice:
             continue
@@ -114,6 +114,15 @@ def search_listings(
         if keyword_normalized is not None and keyword_normalized not in listing.get("description", "").lower():
             continue
 
-        results.append(listing)
+        listing_copy = listing.copy()
+        listing_copy["relevance"] = calculate_relevance(
+            listing_copy.get("price", 0),
+            listing_copy.get("listedDate"),
+            computed_budget,
+        )
+        results.append(listing_copy)
+
+    # Sort by highest relevance score first
+    results.sort(key=lambda x: x["relevance"], reverse=True)
 
     return results
