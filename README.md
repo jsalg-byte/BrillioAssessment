@@ -31,3 +31,10 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 - pagination via page # and page size
 - return based on pagination params
 - added pagination data to response object for frontend handling later
+
+## Step 7 - Frontend Setup & Form Inputs
+- cleared out demo boilerplate
+- built basic search form with flexbox layout
+- created inputs for minPrice, maxPrice, targetBudget, minBedrooms, city, keyword, and pageSize
+- managed inputs through a separate `formData` state object so user typing doesn't trigger API requests on every keystroke.
+- added accessibility best practices. i googled to find references on these best practices but for me this is important to pair with any feature release. i like to think of accessibility (at least basic accessibility) as a requirement.
