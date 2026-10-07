@@ -2,8 +2,8 @@
 
 i realize i did not explicitly state how to do the initial setup for the project but the commands are below.
 
-backend : uv run uvicorn main:app --reload --port 8000
-frontend : npm run dev
+- backend : `uv run uvicorn main:app --reload --port 8000`
+- frontend : `npm run dev`
 
 ## Step 0 - Project Structure
 - Set up `backend` and `frontend` folders inside `/app`.
