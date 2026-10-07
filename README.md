@@ -55,3 +55,27 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 - each listing is a card with list of fields from the data
 - pagination logic / controls added
 - browser alert dialogs on API error responses so users get immediate notification when validation fails (e.g., minPrice > maxPrice).
+
+## Step 10 - Automated Test Suite
+- I ran this prompt for generating the test suite:
+`Write a comprehensive pytest test suite for my FastAPI real estate search API using fastapi.testclient.TestClient. 
+
+The test suite must cover:
+1. Core Logic:
+   - Root endpoint check ("/")
+   - Default search returning all listings ranked in descending order by relevance score
+   - Filter combinations (city, minPrice/maxPrice, minBedrooms, description keyword search)
+   - Scoring unit tests: budget proximity (70% weight) and dynamic recency decay (30% weight)
+
+2. Edge Cases & Error Handling:
+   - Invalid filter inputs returning HTTP 400 with descriptive error messages (minPrice > maxPrice, negative prices, negative bedrooms)
+   - Pagination boundaries: pageSize <= 0 and page <= 0 returning HTTP 400
+   - Out-of-bounds page requests (e.g., page 999) returning an empty list without crashing (HTTP 200, results: [], totalCount: 12)
+   - Exact boundary page slicing across multiple pages
+
+3. Data Inconsistencies & Feeds:
+   - Handling tied relevance scores stably
+   - Date parsing across various MLS formats (ISO 8601, MM/DD/YYYY, etc.)
+   - Missing or unparseable dates falling back to 0.0 recency score rather than raising an unhandled 500 error
+   - No matches found (unmatched city or filters) returning totalCount: 0 and results: [] cleanly`
+- The test are now in the test_main.py file. I also added an extra test in there for when the keyword search is used with the other parameters.
