@@ -26,3 +26,8 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 
 ## Step 5 - Hooking Scoring into Search Results
 - helper function integrated
+
+## Step 6 - Pagination
+- pagination via page # and page size
+- return based on pagination params
+- added pagination data to response object for frontend handling later

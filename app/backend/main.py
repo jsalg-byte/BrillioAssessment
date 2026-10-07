@@ -1,4 +1,5 @@
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -76,6 +77,8 @@ def search_listings(
     city: Optional[str] = None,
     keyword: Optional[str] = None,
     targetBudget: Optional[float] = None,
+    page: int = 1,
+    pageSize: int = 5,
 ):
     # Input validation and edge case handling
     if minPrice is not None and maxPrice is not None and minPrice > maxPrice:
@@ -86,6 +89,10 @@ def search_listings(
         raise HTTPException(status_code=400, detail="maxPrice cannot be negative")
     if minBedrooms is not None and minBedrooms < 0:
         raise HTTPException(status_code=400, detail="minBedrooms cannot be negative")
+    if page <= 0:
+        raise HTTPException(status_code=400, detail="Page must be greater than 0")
+    if pageSize <= 0:
+        raise HTTPException(status_code=400, detail="Page size must be greater than 0")
 
     # If no target budget given, create it
     computed_budget = targetBudget
@@ -125,4 +132,17 @@ def search_listings(
     # Sort by highest relevance score first
     results.sort(key=lambda x: x["relevance"], reverse=True)
 
-    return results
+    # Slice array for pagination
+    total_count = len(results)
+    total_pages = math.ceil(total_count / pageSize) if total_count > 0 else 1
+    start_idx = (page - 1) * pageSize
+    end_idx = start_idx + pageSize
+    paginated_results = results[start_idx:end_idx]
+
+    return {
+        "totalCount": total_count,
+        "totalPages": total_pages,
+        "page": page,
+        "pageSize": pageSize,
+        "results": paginated_results,
+    }
