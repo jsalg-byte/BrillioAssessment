@@ -58,7 +58,9 @@ I am also not using proper git commit messages like feat, fix, etc i am doing th
 
 ## Step 10 - Automated Test Suite
 - I ran this prompt for generating the test suite:
-`Write a comprehensive pytest test suite for my FastAPI real estate search API using fastapi.testclient.TestClient. 
+
+```
+Write a comprehensive pytest test suite for my FastAPI real estate search API using fastapi.testclient.TestClient. 
 
 The test suite must cover:
 1. Core Logic:
@@ -79,3 +81,4 @@ The test suite must cover:
    - Missing or unparseable dates falling back to 0.0 recency score rather than raising an unhandled 500 error
    - No matches found (unmatched city or filters) returning totalCount: 0 and results: [] cleanly`
 - The test are now in the test_main.py file. I also added an extra test in there for when the keyword search is used with the other parameters.
+```
